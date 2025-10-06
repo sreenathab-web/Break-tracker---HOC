@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Magical Team Break Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {background: radial-gradient(circle at 25% 25%, #ffe6b3 50%, #fff9e6 100%);}
+    .centered {max-width: 540px; margin: 60px auto; padding: 36px; background: #fff; border-radius: 24px; box-shadow: 0 18px 60px #faad4080; font-family: 'Segoe UI', Arial, sans-serif;}
+    h2 {margin-bottom: 18px;}
+    label {display: block; margin-top: 14px; font-weight: 600;}
+    select, input {width: 100%; font-size: 1.1em; padding: 10px; border-radius: 8px; border: 1px solid #dadee3; box-sizing: border-box;}
+    .btn {background: linear-gradient(90deg,#faad40,#fa8840); color: #fff; border: none; border-radius: 7px; margin-top: 24px; font-size: 1.07em; width: 100%; padding: 10px; cursor: pointer; box-shadow: 0 2px 16px #faad4060;}
+    .btn:hover, .btn:focus {background: linear-gradient(90deg,#fa7540,#faad40);}
+    .error {color: #ca1717; margin-top: 9px;}
+    .small-link {color: #fa8840; font-size: 0.98em; text-decoration: underline; cursor: pointer; margin-top: 10px; display: inline-block;}
+    .info-field {margin-top: 8px; color: #444; font-size: 1em; line-height: 1.3; background: #f0f3fa; padding: 8px 10px; border-radius: 5px; border: 1px solid #dde2ec;}
+    .avatar-picker {display:flex;gap:10px;flex-wrap:wrap;margin-top:13px;}
+    .avatar-opt {border:3px solid #dadada; border-radius:18px;overflow:hidden;cursor:pointer;width:75px;height:75px;transition:transform 0.2s;object-fit:cover;}
+    .avatar-opt.selected {border:3px solid #fa8840;transform:scale(1.1);}
+    .dashboard {max-width:960px;margin:30px auto;padding:24px 28px 16px;background:#fffffff0;box-shadow:0 10px 32px #faad4030; border-radius:26px;}
+    .user-row {display:flex;align-items:center;margin-bottom:30px;padding-bottom:8px;border-bottom:1px solid #f6e5c4;transition:box-shadow 0.3s;}
+    .user-avatar {width:90px;height:90px;border-radius:30px;overflow:hidden;box-shadow:0 8px 40px #faad4040,0 0 0 8px #faad4020;background:#f7f0ea;}
+    .user-row.onbreak .user-avatar {animation:magicBounce 1.8s infinite cubic-bezier(.7,.7,.4,1);}
+    @keyframes magicBounce {0%,100%{transform:translateY(0);}50%{transform:translateY(-12px) scale(1.03);}}
+    .user-row.working .user-avatar {animation:pulseGlow 2s infinite;}
+    @keyframes pulseGlow {0%{box-shadow:0 0 20px #c7f59c,0 0 0px #faad4020;}50%{box-shadow:0 0 40px #c7f59c,0 0 20px #faad4080;}100%{box-shadow:0 0 20px #c7f59c,0 0 0px #faad4020;}}
+    .user-info {margin-left:26px;flex:1;}
+    .user-name {font-weight:bold;margin-bottom:2px;font-size:1.15em;}
+    .user-status {font-size:1.03em;margin-bottom:3px;}
+    .user-row.onbreak .user-status {color:#fa7540;}
+    .user-row.working .user-status {color:#42b242;}
+    .dashboard-quote {margin:18px 0 16px 0;font-size:1.13em;color:#fa8840;text-align:center;font-family:'Georgia',serif;}
+    .user-gesture {font-size:1.02em;color:#004;}
+    .break-controls {margin-top:10px;}
+    .break-controls button {width:125px;margin-right:14px;}
+    @keyframes magicFadeIn {from{opacity:0;transform:scale(0.7);}to{opacity:1;transform:none;}  }
+    .particles {pointer-events:none; position:fixed; z-index:1000; left:50vw; top:60vh;}
+    .particle {position:absolute; border-radius:50%; width:10px; height:10px; opacity:0.9; animation:particleBurst 1.1s cubic-bezier(.4,.7,.1,1);}
+    @keyframes particleBurst {from{transform:scale(1);}to{transform:translate(var(--tx),var(--ty)) scale(2);opacity:0;}}
+    .avatar-change-btn {margin-top:10px; background: #ffd761; color: #884214;}
+    .avatar-change-panel {margin:18px 0; padding:10px 0;}
+    table {border-collapse:collapse; width:99%; margin-top:20px;}
+    th, td {padding:7px 10px; border:1px solid #e6d2a0;}
+    th {background:#ffefd1;}
+    td {background:#fffde8; text-align:center;}
+    .dashboard-summary {margin-top:40px;}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const teamMembers = [
+      { name:"Asha AS", email:"asha.as@opendoor.com", empid:"010293" },
+      { name:"Revathi Kumar", email:"revathi.kumar@opendoor.com", empid:"010113" },
+      { name:"Pranesh Krishnamoorthy", email:"pranesh.krishnamoorthy@opendoor.com", empid:"009771" },
+      { name:"Sheeba Rani D", email:"sheeba.rani.d@opendoor.com", empid:"009741" },
+      { name:"Subham E", email:"subham.e@opendoor.com", empid:"010290" },
+      { name:"Sunmathy Wilson", email:"sunmathy.wilson@opendoor.com", empid:"009753" },
+      { name:"Trilokes Sahu", email:"trilokes.sahu@opendoor.com", empid:"009734" },
+      { name:"Udhaya Kumari", email:"udhaya.kumari@opendoor.com", empid:"010242" },
+      { name:"Afredi", email:"afredi.a@opendoor.com", empid:"009426" },
+      { name:"Akshaya Narayanan", email:"akshaya.narayanan@opendoor.com", empid:"009495" },
+      { name:"Gopal M", email:"gopal.m@opendoor.com", empid:"009443" },
+      { name:"Kamesh D", email:"d.kamesh@opendoor.com", empid:"010193" },
+      { name:"Manikandan M", email:"manikandan.m@opendoor.com", empid:"009516" },
+      { name:"Nirosha Banu", email:"nirosha.banu@opendoor.com", empid:"009810" },
+      { name:"Savitha E", email:"savitha.e@opendoor.com", empid:"009464" },
+      { name:"Ramya Bharathi. R", email:"ramya.bharathir@opendoor.com", empid:"009818" },
+      { name:"Muzammil Ahamed Hussain", email:"muzammil.ahamedhussain@opendoor.com", empid:"010264" },
+      { name:"Srinivasan N", email:"srinivasan.n@opendoor.com", empid:"010266" },
+      { name:"Vinod Kumar", email:"vinod.kumar@opendoor.com", empid:"008459" },
+      { name:"Sreenath", email:"sreenath.ab@opendoor.com", empid:"008526" }
+    ];
+    const avatars = Array.from({length:15},(_,i)=>`avatar${i+1}.jpeg`);
+    const gestures = [
+      { name: "Walking in the park", emoji: "🚶‍♀️🌳" },
+      { name: "Dancing for joy", emoji: "💃🎶" },
+      { name: "Mobile chatting", emoji: "💬📱" },
+      { name: "Reading", emoji: "📖✨" },
+      { name: "Sleeping", emoji: "😴⭐" },
+      { name: "Jumping in the park", emoji: "🤸‍♀️🌳" },
+      { name: "Swinging in the park", emoji: "🎠🌳" },
+      { name: "Drinking coffee", emoji: "☕️😌" },
+      { name: "Counting stars", emoji: "✨🌟" }
+    ];
+    const motivational = [
+      "🌟 Take a magical break! You deserve it.",
+      "Breathe, relax—your creativity is restoring.",
+      "Stretch, smile, count stars!",
+      "Great work! Time to recharge.",
+      "Have a magical day, friend! ✨",
+      "🌿 A short break now builds big energy later.",
+      "🚀 Pause. Reset. Come back stronger.",
+      "Your mind deserves calm as much as your body. 💆",
+      "✨ Small breaks = big wins.",
+      "☕ Coffee + a pause = productivity boost.",
+      "🌊 Breathe deep like the ocean, let stress float away.",
+      "📖 Close your eyes, imagine your happy place.",
+      "💡 Breaks spark new ideas. Let your mind wander.",
+      "🌻 Relax and bloom again with energy.",
+      "🎶 Take a pause, maybe hum your favorite tune!",
+      "🌈 Break = Brain’s rainbow recharge.",
+      "💖 Self-care isn’t selfish. Take 5 for you.",
+      "🎯 Rest now, hit goals sharper later.",
+      "🌍 Step back, breathe, the world waits for you.",
+      "🔥 Breaks aren’t stopping, they’re fueling your fire!"
+    ];
+    function getUsers() {return JSON.parse(localStorage.getItem('bt_users')||"[]");}
+    function saveUsers(u){localStorage.setItem('bt_users',JSON.stringify(u));}
+    function getCurrentEmpid(){return localStorage.getItem('bt_current_empid');}
+    function setCurrentEmpid(id){localStorage.setItem('bt_current_empid',id);}
+    function clearCurrentEmpid(){localStorage.removeItem('bt_current_empid');}
+    function findUser(empid){return getUsers().find(u=>u.empid===empid);}
+    function mins(ms){return Math.floor(ms/60000);}
+    function todayKey(){return new Date().toISOString().slice(0,10);}
+    function getTodayLogs(u){if(!u||!u.logs)return[];return u.logs.filter(l=>l.date===todayKey());}
+    function showRegister(error="") {
+      app.innerHTML =
+      '<div class="centered fade-in">'+
+        '<h2>Register</h2>'+
+        '<form autocomplete="off">'+
+          '<label for="nameSel">Select Name</label>'+
+          '<select id="nameSel" required>'+
+            teamMembers.map(m => `<option>${m.name}</option>`).join('')+
+          '</select>'+
+          '<label>Name</label>'+
+          '<div id="regName" class="info-field"></div>'+
+          '<label>Email</label>'+
+          '<div id="regEmail" class="info-field"></div>'+
+          '<label>Emp ID</label>'+
+          '<div id="regEmpId" class="info-field"></div>'+
+          '<label>Pick Your Magical Avatar</label>'+
+          '<div class="avatar-picker" id="avatarPickerRegister"></div>'+
+          '<input type="hidden" id="regAvatarIdx" value="0"/>'+
+          '<label>Password</label>'+
+          '<input id="regPwd" type="password" placeholder="Create password" required minlength="4"/>'+
+          '<button type="submit" class="btn">Register</button>'+
+        '</form>'+
+        `<div class="error">${error}</div>`+
+        '<span class="small-link" onclick="showLogin()">Already registered? Login</span>'+
+      '</div>';
+      autoFillFields("nameSel","regName","regEmail","regEmpId");
+      showAvatarOptions("avatarPickerRegister","regAvatarIdx");
+      document.querySelector('form').onsubmit = function(e){
+        e.preventDefault();
+        const name = document.getElementById("nameSel").value;
+        const email = document.getElementById("regEmail").textContent;
+        const empid = document.getElementById("regEmpId").textContent;
+        const avatarIdx = parseInt(document.getElementById("regAvatarIdx").value,10);
+        const pwd = document.getElementById("regPwd").value.trim();
+        let users = getUsers();
+        if(users.some(u=>u.empid===empid)){showRegister("EMP ID already registered!");return;}
+        if(pwd.length<4){showRegister("Password must be at least 4 chars.");return;}
+        users.push({name,email,empid,password:pwd,avatarIdx,logs:[],lastLogin:new Date().toISOString()});
+        saveUsers(users);
+        setCurrentEmpid(empid);
+        showDashboard();
+      };
+    }
+    function showLogin(error="") {
+      app.innerHTML =
+      '<div class="centered fade-in">'+
+        '<h2>Login</h2>'+
+        '<form autocomplete="off">'+
+          '<label for="nameLoginSel">Select Name</label>'+
+          '<select id="nameLoginSel" required>'+
+            teamMembers.map(m => `<option>${m.name}</option>`).join('')+
+          '</select>'+
+          '<label>Name</label>'+
+          '<div id="loginName" class="info-field"></div>'+
+          '<label>Email</label>'+
+          '<div id="loginEmail" class="info-field"></div>'+
+          '<label>Emp ID</label>'+
+          '<div id="loginEmpId" class="info-field"></div>'+
+          '<label>Password</label>'+
+          '<input id="loginPwd" type="password" placeholder="Enter password" required />'+
+          '<button type="submit" class="btn">Login</button>'+
+        '</form>'+
+        `<div class="error">${error}</div>`+
+        '<span class="small-link" onclick="showRegister()">First time? Register</span>'+
+      '</div>';
+      autoFillFields("nameLoginSel","loginName","loginEmail","loginEmpId");
+      document.querySelector('form').onsubmit=function(e){
+        e.preventDefault();
+        const empid = document.getElementById("loginEmpId").textContent;
+        const pwd = document.getElementById("loginPwd").value.trim();
+        let users = getUsers();
+        const user = users.find(u=>u.empid===empid);
+        if(!user || user.password!==pwd){showLogin("Invalid EMP ID or password."); return;}
+        setCurrentEmpid(empid);
+        user.lastLogin = new Date().toISOString();
+        let idx = users.findIndex(u => u.empid===empid);
+        users[idx]=user; saveUsers(users);
+        showDashboard();
+      }
+    }
+    function autoFillFields(selId, nameId, emailId, empidId){
+      const sel=document.getElementById(selId);
+      const nameF=document.getElementById(nameId);
+      const emailF=document.getElementById(emailId);
+      const empidF=document.getElementById(empidId);
+      sel.onchange=function(){
+        const m=teamMembers.find(t=>t.name===this.value);
+        if(m){nameF.textContent=m.name;emailF.textContent=m.email;empidF.textContent=m.empid;}
+      }; sel.dispatchEvent(new Event('change'));
+    }
+    function showAvatarOptions(containerId,hiddenInputId,currentIdx){
+      const cont=document.getElementById(containerId);
+      cont.innerHTML = avatars.map((url,i)=>
+        `<img src="${url}" class="avatar-opt${currentIdx==null?(i==0?" selected":""):(i==currentIdx?" selected":"")}" data-idx="${i}"/>`
+      ).join('');
+      let hid = document.getElementById(hiddenInputId);
+      if (!hid) {
+        hid = document.createElement("input");
+        hid.type = "hidden";
+        hid.id = hiddenInputId;
+        cont.parentNode.appendChild(hid);
+      }
+      function select(idx) {
+        cont.querySelectorAll(".avatar-opt").forEach(e=>e.classList.remove('selected'));
+        cont.querySelector(`.avatar-opt[data-idx="${idx}"]`).classList.add('selected');
+        hid.value = idx;
+      }
+      cont.querySelectorAll(".avatar-opt").forEach((el,i)=>{
+        el.onclick=function(){select(i);}
+      });
+      select(currentIdx==null?0:currentIdx);
+      hid.value=currentIdx==null?0:currentIdx;
+    }
+    function showDashboard(changeAvatarMode){
+      const users = getUsers();
+      const currentEmpid = getCurrentEmpid();
+      if(!currentEmpid) { showLogin(); return; }
+      let usersDict = {}; users.forEach(u=>usersDict[u.empid]=u);
+      const currentUser = usersDict[currentEmpid];
+      const randomQuote = motivational[Math.floor(Math.random()*motivational.length)];
+      app.innerHTML =
+        '<div class="dashboard fade-in">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+            '<h2>Team Dashboard</h2>'+
+            '<button class="btn" style="width:auto;padding: 5px 14px; font-size:0.97em;" onclick="logout()">Logout</button>'+
+          '</div>'+
+          `<div class="dashboard-quote">${randomQuote}</div>`+
+          (changeAvatarMode && currentUser ?
+            '<div class="avatar-change-panel">'+
+              '<label style="font-size:1.03em">Change Your Avatar</label>'+
+              '<div class="avatar-picker" id="avatarPickerChange"></div>'+
+              '<input type="hidden" id="avatarIdxChange" value="'+String(currentUser.avatarIdx||0)+'"/>'+
+              '<button class="btn avatar-change-btn" onclick="saveChangedAvatar()">Save Avatar</button>'+
+              '<button class="btn" style="background:#eee;color:#444;margin-top:7px;" onclick="showDashboard()">Cancel</button>'+
+            '</div>' :
+            '<button class="btn avatar-change-btn" style="max-width:200px;margin:10px 0;" onclick="showDashboard(true)">Change My Avatar</button>'
+          )+
+          teamMembers.map(tm=>{
+            const user = usersDict[tm.empid];
+            if(!user) return (
+              '<div class="user-row">'+
+                '<div class="user-avatar"></div>'+
+                '<div class="user-info">'+
+                  `<div class="user-name">${tm.name} (${tm.empid})</div>`+
+                  '<div class="user-status" style="color:#b14444;">Not Registered</div>'+
+                '</div>'+
+              '</div>'
+            );
+            const logs = getTodayLogs(user);
+            const activeBreak = logs.find(l=>l.type==="break"&&!l.end);
+            let lastBreakMin="-", totalBreakMin=0;
+            logs.filter(l=>l.type==="break"&&l.end).forEach(l=>{totalBreakMin+=mins(l.end-l.start);lastBreakMin=mins(l.end-l.start)});
+            const breakLeft = Math.max(60-totalBreakMin,0);
+            let status = activeBreak?"On Break":"Working", rowClass = activeBreak?"onbreak":"working";
+            let gesture="";
+            if(activeBreak){
+              const randGest = gestures[Math.floor(Math.random()*gestures.length)];
+              gesture = `<span class="user-gesture">${randGest.emoji} ${randGest.name}</span>`;
+            }
+            let controls="";
+            if(user.empid===currentEmpid){
+              controls =
+                '<div class="break-controls">'+
+                  `<button class="btn" onclick="startBreak()" ${activeBreak?"disabled":""}>Start Break</button>`+
+                  `<button class="btn" onclick="endBreak()" ${activeBreak?"":"disabled"}>End Break</button>`+
+                '</div>';
+            }
+            return (
+              `<div class="user-row ${rowClass}">`+
+                `<div class="user-avatar">`+
+                  `<img src="${avatars[user.avatarIdx]}" style="width:100%;height:100%;object-fit:cover;border-radius:30px;${activeBreak?"box-shadow:0 0 0 8px #faad4080;":""}" />`+
+                '</div>'+
+                '<div class="user-info">'+
+                  `<div class="user-name">${tm.name} (${tm.empid})${user.empid===currentEmpid ? " <b>(You)</b>":""}</div>`+
+                  `<div class="user-status">${status}</div>`+
+                  `<div style="color:#888;font-size:0.98em;">Last break: ${lastBreakMin!=="-"?lastBreakMin+" min":"—"} | Break left: ${breakLeft} min</div>`+
+                  `${gesture}`+
+                  `${controls}`+
+                '</div>'+
+              '</div>'
+            );
+          }).join('')+
+        '</div>';
+
+      if(changeAvatarMode && currentUser){
+        showAvatarOptions("avatarPickerChange","avatarIdxChange",currentUser.avatarIdx);
+      }
+
+      showBreakDashboard(); // <<=== ADDITION: break dashboard with filters
+    }
+
+    window.saveChangedAvatar=()=>{
+      const currentEmpid = getCurrentEmpid();
+      let users = getUsers();
+      const user = users.find(u=>u.empid===currentEmpid);
+      const newIdx = parseInt(document.getElementById("avatarIdxChange").value,10);
+      if (!isNaN(newIdx)) {
+        user.avatarIdx = newIdx;
+        saveUsers(users);
+      }
+      showDashboard(); // Immediately refresh
+    };
+
+    function startBreak(){
+      const currentEmpid=getCurrentEmpid();
+      let users=getUsers();
+      const user=users.find(u=>u.empid===currentEmpid);
+      endBreak();
+      user.logs.push({date:todayKey(),type:"break",start:Date.now()});
+      saveUsers(users);
+      showMagicBurst();
+      showDashboard();
+    }
+    function endBreak(){
+      const currentEmpid=getCurrentEmpid();
+      let users=getUsers();
+      const user=users.find(u=>u.empid===currentEmpid);
+      const active = user.logs.find(l=>l.date===todayKey()&&l.type==="break"&&!l.end);
+      if(active) active.end=Date.now();
+      saveUsers(users);
+      showMagicBurst();
+      showDashboard();
+    }
+    function logout(){clearCurrentEmpid();showLogin();}
+    function showMagicBurst(){
+      let burst=document.createElement("div");
+      burst.className="particles";
+      burst.innerHTML=Array(20).fill(0).map(()=>`<span class="particle" style="
+        background: hsl(${Math.random()*360},80%,60%);
+        left:${Math.random()*160-80}px; top:${Math.random()*90-45}px;
+        --tx:${Math.random()*140-70}px; --ty:${Math.random()*90-45}px;
+      "></span>`).join('');
+      document.body.appendChild(burst);
+      setTimeout(()=>burst.remove(),950);
+    }
+    var app=document.getElementById("app");
+    function boot(){if(getCurrentEmpid())showDashboard();else showLogin();}
+    boot();
+    window.showLogin=showLogin;window.showRegister=showRegister;window.showDashboard=showDashboard;window.startBreak=startBreak;window.endBreak=endBreak;window.logout=logout;
+
+    // ------------------ ADDED: Enhanced Break Dashboard with filters ------------------
+    function daysAgo(n) {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    }
+    function showBreakDashboard() {
+      const users = getUsers();
+      const dates = Array.from({length: 7}, (_, i) => daysAgo(i));
+      let html = `
+        <div class="dashboard-summary">
+          <h3>Breaks History & Filters</h3>
+          <label for="breakNameSel">Filter by Name:</label>
+          <select id="breakNameSel">
+            <option value="">Select Name</option>
+            ${users.map(u => `<option value="${u.empid}">${u.name}</option>`).join('')}
+          </select>
+          <label for="breakDateSel">Filter by Date:</label>
+          <select id="breakDateSel">
+            <option value="">Select Date</option>
+            ${dates.map(dt => `<option value="${dt}">${dt}</option>`).join('')}
+          </select>
+          <div id="breakDashboardResult"></div>
+        </div>
+      `;
+      app.innerHTML += html;
+
+      document.getElementById('breakNameSel').onchange = function() {
+        showBreaksForName(this.value);
+        document.getElementById('breakDateSel').selectedIndex = 0;
+      };
+      document.getElementById('breakDateSel').onchange = function() {
+        showBreaksForDate(this.value);
+        document.getElementById('breakNameSel').selectedIndex = 0;
+      };
+    }
+
+    function showBreaksForName(empid) {
+      if (!empid) {
+        document.getElementById('breakDashboardResult').innerHTML = "";
+        return;
+      }
+      const user = getUsers().find(u => u.empid === empid);
+      if (!user) return;
+      let html = `<h4>${user.name} - Breaks (Last 7 Days)</h4>
+      <table>
+        <tr>
+          <th>Date</th>
+          <th># Breaks</th>
+          <th>Total Duration (min)</th>
+        </tr>`;
+      for (let i = 0; i < 7; i++) {
+        const dt = daysAgo(i);
+        const logs = (user.logs||[]).filter(l => l.date === dt && l.type === "break" && l.end);
+        const count = logs.length;
+        const totalMin = logs.reduce((sum, l) => sum + mins(l.end - l.start), 0);
+        html += `<tr>
+          <td>${dt}</td>
+          <td>${count}</td>
+          <td>${totalMin}</td>
+        </tr>`;
+      }
+      html += `</table>`;
+
+      // Details table: start/end/duration per break for selected user
+      html += `<h5 style="margin-top:24px;">Details of All Breaks (Last 7 Days)</h5>
+        <table>
+          <tr>
+            <th>Date</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Duration (min)</th>
+          </tr>`;
+      for (let i = 0; i < 7; i++) {
+        const dt = daysAgo(i);
+        const logs = (user.logs||[]).filter(l => l.date === dt && l.type === "break" && l.end);
+        logs.forEach(l => {
+          html += `<tr>
+            <td>${dt}</td>
+            <td>${new Date(l.start).toLocaleTimeString()}</td>
+            <td>${new Date(l.end).toLocaleTimeString()}</td>
+            <td>${mins(l.end - l.start)}</td>
+          </tr>`;
+        });
+      }
+      html += `</table>`;
+      document.getElementById('breakDashboardResult').innerHTML = html;
+    }
+
+    function showBreaksForDate(date) {
+      if (!date) {
+        document.getElementById('breakDashboardResult').innerHTML = "";
+        return;
+      }
+      const users = getUsers();
+      let html = `<h4>Breaks Summary for ${date}</h4>
+      <table>
+        <tr>
+          <th>Name</th>
+          <th># Breaks</th>
+          <th>Total Duration (min)</th>
+        </tr>`;
+      users.forEach(user => {
+        const logs = (user.logs||[]).filter(l => l.date === date && l.type === "break" && l.end);
+        const count = logs.length;
+        const totalMin = logs.reduce((sum, l) => sum + mins(l.end - l.start), 0);
+        html += `<tr>
+          <td>${user.name}</td>
+          <td>${count}</td>
+          <td>${totalMin}</td>
+        </tr>`;
+      });
+      html += `</table>`;
+
+      // Details per user for that day
+      html += `<h5 style="margin-top:24px;">Break Details for ${date}</h5>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Duration (min)</th>
+          </tr>`;
+      users.forEach(user => {
+        const logs = (user.logs||[]).filter(l => l.date === date && l.type === "break" && l.end);
+        logs.forEach(l => {
+          html += `<tr>
+            <td>${user.name}</td>
+            <td>${new Date(l.start).toLocaleTimeString()}</td>
+            <td>${new Date(l.end).toLocaleTimeString()}</td>
+            <td>${mins(l.end - l.start)}</td>
+          </tr>`;
+        });
+      });
+      html += `</table>`;
+      document.getElementById('breakDashboardResult').innerHTML = html;
+    }
+    // ------------------ END: Enhanced Break Dashboard ------------------
+
+  </script>
+</body>
+</html>
